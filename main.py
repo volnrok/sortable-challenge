@@ -1,6 +1,7 @@
 from product import Product
 from listing import Listing
 from check import is_match
+import re
 
 # We'll sort products by manufacturer first
 man_lookup = {}
@@ -21,6 +22,8 @@ with open('products.txt') as file:
 with open('listings2.txt') as file:
     mcount = 0
     lcount = 0
+    word_pattern = re.compile('(\w*)')
+
     for json in file:
         listing = Listing(json)
         man = listing.manufacturer.lower()
@@ -38,7 +41,7 @@ with open('listings2.txt') as file:
             if len(matches) == 1:
                 #print("Match found: ", matches[0].manufacturer, matches[0].model, listing.title)
                 mcount += 1
-                
+
         lcount += 1
         if lcount % 1000 == 0:
             print(lcount)
