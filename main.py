@@ -84,9 +84,10 @@ with open('listings.txt', encoding='utf-8') as file:
 
         lcount += 1
         if lcount % 1000 == 0:
-            print(lcount)
+            print('.', end='')
 
-print(lcount, "listings read,", mcount, "matches found")
+print()
+print(lcount, 'listings read,', mcount, 'matches found')
 
 with open('matches.txt', mode='w', encoding='utf-8') as file:
     for man in man_lookup:
@@ -94,3 +95,5 @@ with open('matches.txt', mode='w', encoding='utf-8') as file:
             if len(product.matches):
                 file.write(json.dumps(product, cls=Encoder, ensure_ascii=False))
                 file.write('\n')
+
+print('Results saved to matches.txt')
