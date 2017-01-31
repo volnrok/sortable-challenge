@@ -34,6 +34,7 @@ with open('products.txt', encoding='utf-8') as file:
 with open('listings.txt', encoding='utf-8') as file:
     mcount = 0
     lcount = 0
+    man_cutoff = 3 # Only check the first few words for manufacturer matches
     word_pattern = re.compile('\w+')
 
     for j in file:
@@ -46,6 +47,7 @@ with open('listings.txt', encoding='utf-8') as file:
                 man = aliases[man]
 
             else:
+                i = 0
                 # Try to find a manufacturer match, look for words in the listing title
                 for match in word_pattern.finditer(listing.title):
                     match_str = match.group(0).lower()
@@ -55,6 +57,10 @@ with open('listings.txt', encoding='utf-8') as file:
                     if match_str in man_lookup:
                         man = match_str
                         break
+                    i += 1
+                    # Actual product matches (vs accessories) will have a manufacturer match in the first few words
+                    if i >= man_cutoff:
+                        break
 
         if man in man_lookup:
             model_matches = []
@@ -62,7 +68,8 @@ with open('listings.txt', encoding='utf-8') as file:
 
             for product in man_lookup[man]:
                 match = check_match(product, listing)
-                if match:
+                # Don't count model matches with single-character models
+                if match and len(product.model) > 1:
                     model_matches.append(product)
                 if match >= 2:
                     family_matches.append(product)
