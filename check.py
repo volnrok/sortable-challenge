@@ -2,14 +2,22 @@ from product import Product
 from listing import Listing
 import re
 
-def is_match(product, listing):
+def check_match(product, listing):
     """Check if product and listing match (Assuming manufacturer already matches)"""
 
     # Use regex created in product initialization
-    c_found = bool(product.pattern_c.search(listing.title))
-    #m_found = re.search(product.model, listing.title, re.IGNORECASE)
+    m_found = product.model_pattern_c.search(listing.title)
 
-    #if c_found != m_found:
-        #print(c_found, p_found, product.manufacturer, product.model, listing.title, sep=', ')
+    if m_found:
+        if hasattr(product, 'family'):
+            f_found = product.family_pattern_c.search(listing.title)
 
-    return c_found
+            if f_found:
+                # model and family match
+                return 2
+
+        # model match
+        return 1
+
+    # no match
+    return 0

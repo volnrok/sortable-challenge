@@ -1,14 +1,27 @@
-from product import Product
-from listing import Listing
-from check import is_match
+import json
+import random
 import re
+
+from check import check_match
+from encoder import Encoder
+from listing import Listing
+from product import Product
 
 # We'll sort products by manufacturer first
 man_lookup = {}
 
-with open('products.txt') as file:
-    for json in file:
-        product = Product(json)
+# List of common manufacturer aliases
+aliases = {
+    'agfaphoto': 'agfa',
+    'fuji': 'fujifilm',
+    'hewlett': 'hp',
+    'konica': 'konica minolta',
+    'sigmatek': 'sigma'
+}
+
+with open('products.txt', encoding='utf-8') as file:
+    for j in file:
+        product = Product(j)
         man = product.manufacturer.lower()
 
         # New manufacturer
@@ -18,29 +31,49 @@ with open('products.txt') as file:
         # Enter product into data store
         man_lookup[man].append(product)
 
-# Python has issues opening the original file, so listings 2 is the file converted to ANSI
-with open('listings2.txt') as file:
+with open('listings.txt', encoding='utf-8') as file:
     mcount = 0
     lcount = 0
-    word_pattern = re.compile('(\w*)')
+    word_pattern = re.compile('\w+')
 
-    for json in file:
-        listing = Listing(json)
+    for j in file:
+        listing = Listing(j)
         man = listing.manufacturer.lower()
 
         if man not in man_lookup:
-            # Try to find a manufacturer match, do nothing for now
-            pass
+            if man in aliases:
+                # First look for manufacturer aliases match
+                man = aliases[man]
+
+            else:
+                # Try to find a manufacturer match, look for words in the listing title
+                for match in word_pattern.finditer(listing.title):
+                    match_str = match.group(0).lower()
+                    if match_str in aliases:
+                        man = aliases[match_str]
+                        break
+                    if match_str in man_lookup:
+                        man = match_str
+                        break
 
         if man in man_lookup:
-            matches = []
-            for product in man_lookup[man]:
-                if is_match(product, listing):
-                    matches.append(product)
+            model_matches = []
+            family_matches = []
 
-            if len(matches) == 1:
-                #print("Match found: ", matches[0].manufacturer, matches[0].model, listing.title)
+            for product in man_lookup[man]:
+                match = check_match(product, listing)
+                if match:
+                    model_matches.append(product)
+                if match >= 2:
+                    family_matches.append(product)
+
+            if len(model_matches) == 1:
                 mcount += 1
+                model_matches[0].matches.append(listing)
+
+            elif len(family_matches) == 1:
+                mcount += 1
+                family_matches[0].matches.append(listing)
 
         lcount += 1
         if lcount % 1000 == 0:
@@ -48,6 +81,9 @@ with open('listings2.txt') as file:
 
 print(lcount, "listings read,", mcount, "matches found")
 
-#for man in man_lookup:
-    #for product in man:
-        
+with open('matches.txt', mode='w', encoding='utf-8') as file:
+    for man in man_lookup:
+        for product in man_lookup[man]:
+            if len(product.matches):
+                file.write(json.dumps(product, cls=Encoder, ensure_ascii=False))
+                file.write('\n')
