@@ -8,16 +8,19 @@ def check_match(product, listing):
     # Use regex created in product initialization
     m_found = product.model_pattern_c.search(listing.title)
 
+    # Store the results in a dictionary
+    result = {
+        'm_match': False, # Model matches
+        'f_match': False, # Model and family match
+        'm_index': -1 # Start index of model match
+    }
+
     if m_found:
+        result['m_match'] = True
+        result['m_index'] = m_found.start(0)
+
         if hasattr(product, 'family'):
             f_found = product.family_pattern_c.search(listing.title)
+            result['f_match'] = bool(f_found)
 
-            if f_found:
-                # model and family match
-                return 2
-
-        # model match
-        return 1
-
-    # no match
-    return 0
+    return result

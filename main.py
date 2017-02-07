@@ -69,18 +69,33 @@ with open('listings.txt', encoding='utf-8') as file:
             for product in man_lookup[man]:
                 match = check_match(product, listing)
                 # Don't count model matches with single-character models
-                if match and len(product.model) > 1:
-                    model_matches.append(product)
-                if match >= 2:
-                    family_matches.append(product)
+                if match['m_match'] and len(product.model) > 1:
+                    model_matches.append((product, match['m_index']))
+                if match['f_match'] >= 2:
+                    family_matches.append((product, match['m_index']))
 
+            matched = False
             if len(model_matches) == 1:
-                mcount += 1
-                model_matches[0].matches.append(listing)
+                matched = model_matches[0]
 
             elif len(family_matches) == 1:
-                mcount += 1
-                family_matches[0].matches.append(listing)
+                matched = family_matches[0]
+
+            if matched:
+                # If the manufacturer is present in the title multiple times, check that the product model happens before the second
+                i = 0
+                second_index = 0
+                for man_match in re.finditer(man, listing.title, re.IGNORECASE):
+                    i += 1
+                    if i >= 2:
+                        second_index = man_match.start(0)
+                        break
+
+                if i >= 2 and second_index < matched[1]:
+                    pass
+                else:
+                    mcount += 1
+                    matched[0].matches.append(listing)
 
         lcount += 1
         if lcount % 1000 == 0:
